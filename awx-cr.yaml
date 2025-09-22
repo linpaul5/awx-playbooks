@@ -1,0 +1,15 @@
+﻿apiVersion: awx.ansible.com/v1beta1
+kind: AWX
+metadata:
+  name: awx-demo
+spec:
+  service_type: nodeport
+  nodeport_port: 32000
+  extra_volume_mounts:
+    - name: playbooks
+      mountPath: /var/lib/awx/projects
+  extra_volumes:
+    - name: playbooks
+      hostPath:
+        path: /c/awx/awx-projects
+
