@@ -1,39 +1,15 @@
 ---
-- name: IOS sanity check
-  hosts: ios            # or 'router1' or 'all' — must match your Inventory
-  gather_facts: no
-  collections:
-    - cisco.ios
-
+- name: Show IP int brief (Cisco IOS)
+  hosts: cisco
+  gather_facts: false
+  connection: network_cli
+  vars:
+    ansible_network_os: cisco.ios.ios
   tasks:
-    - name: Run show commands
-      ios_command:
-        commands:
-          - show version
-          - show ip interface brief | exclude unassigned
-      register: r
-
-    # 1) Print the full structured output
-    - name: Print full stdout_lines
-      debug:
-        var: r.stdout_lines
-
-    # 2) Pretty summary (first lines only so the log isn't huge)
-    - name: Pretty summary
-      vars:
-        pretty: |
-          ===== {{ inventory_hostname }} =====
-          # show version (top lines)
-          {{ (r.stdout_lines[0] | default([]))[:10] | join('\n') }}
-
-          # show ip interface brief (top 20)
-          {{ (r.stdout_lines[1] | default([]))[:20] | join('\n') }}
-      debug:
-        msg: "{{ pretty }}"
-
-    # 3) Put a couple of key facts in the Job Summary (appears at the end)
-    - name: Expose key facts in job summary
-      set_stats:
-        data:
-          ios_show_version_first_line: "{{ (r.stdout_lines[0] | default(['N/A']))[0] }}"
-          iface_count: "{{ (r.stdout_lines[1] | default([])) | length }}"
+    - name: Run command
+      cisco.ios.ios_command:
+        commands: show ip interface brief
+      register: out
+    - name: Print output
+      ansible.builtin.debug:
+        var: out.stdout_lines
