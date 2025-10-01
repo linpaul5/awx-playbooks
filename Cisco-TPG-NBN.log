@@ -1,0 +1,375 @@
+﻿
+
+
+Cisco-TPG-NBN#
+Cisco-TPG-NBN#
+Cisco-TPG-NBN#
+Cisco-TPG-NBN#
+Cisco-TPG-NBN#
+Cisco-TPG-NBN#
+Cisco-TPG-NBN#
+Cisco-TPG-NBN#
+Cisco-TPG-NBN#
+Cisco-TPG-NBN#sh int status
+
+Port         Name               Status       Vlan       Duplex  Speed Type
+Gi0/1/0                         connected    10         a-full a-1000 10/100/1000BaseTX
+Gi0/1/1                         notconnect   10           auto   auto 10/100/1000BaseTX
+Gi0/1/2      test port          notconnect   20           auto   auto 10/100/1000BaseTX
+Gi0/1/3                         connected    10         a-full a-1000 10/100/1000BaseTX
+Cisco-TPG-NBN#
+Cisco-TPG-NBN#
+Cisco-TPG-NBN#sh run
+Building configuration...
+
+Current configuration : 9244 bytes
+!
+! Last configuration change at 14:02:46 AEST Tue Sep 30 2025 by linpaul
+! NVRAM config last updated at 14:02:50 AEST Tue Sep 30 2025 by linpaul
+!
+version 17.15
+service timestamps debug datetime msec
+service timestamps log datetime msec
+platform qfp utilization monitor load 80
+platform hardware throughput crypto 150000
+!
+hostname Cisco-TPG-NBN
+!
+boot-start-marker
+boot-end-marker
+!
+!
+no aaa new-model
+clock timezone AEST 10 0
+clock summer-time AEDT recurring 1 Sun Oct 2:00 1 Sun Apr 3:00
+!
+ip host linpaul.myddns.me ns WAN-IP
+ip name-server 1.1.1.1 8.8.8.8 203.12.160.35 203.12.160.36
+!
+!
+!
+!
+!
+!
+ip ddns update method NOIP
+ HTTP
+  add http://ztrw6ss:ststb11Sii3C@dynupdate.no-ip.com/nic/updatehostname=linpaul.myddns.me&myip=$IPADDR
+ interval maximum 0 0 5 0
+!
+ip dhcp excluded-address 192.168.0.1 192.168.0.20
+!
+ip dhcp pool LAN10
+ network 192.168.0.0 255.255.255.0
+ default-router 192.168.0.1 
+ dns-server 203.12.160.35 203.12.160.36 
+ lease 7
+!
+ip dhcp pool RESV-Paul-Zenbook
+ host 192.168.0.25 255.255.255.0
+ client-identifier 01c4.bde5.e754.aa
+ default-router 192.168.0.1 
+ dns-server 203.12.160.35 203.12.160.36 
+!         
+ip dhcp pool DLINK-DIR-BE3602
+ client-identifier dcea.e760.9a06
+ default-router 192.168.0.1 
+ dns-server 203.12.160.35 203.12.160.36 
+!
+ip dhcp pool RESV-Zenbook1
+ host 192.168.0.45 255.255.255.0
+ client-identifier 019c.67d6.c979.94
+ default-router 192.168.0.1 
+ dns-server 203.12.160.35 203.12.160.36 
+!
+!
+!
+login block-for 120 attempts 3 within 60
+login on-success log
+!
+!
+!
+!
+!
+!
+!
+subscriber templating
+!
+!
+!
+crypto pki trustpoint TP-self-signed-3363429926
+ enrollment selfsigned
+ subject-name cn=IOS-Self-Signed-Certificate-3363429926
+ revocation-check none
+ rsakeypair TP-self-signed-3363429926
+ hash sha512
+!
+crypto pki trustpoint SLA-TrustPoint
+ enrollment pkcs12
+ revocation-check crl
+ hash sha512
+!
+!
+crypto pki certificate chain TP-self-signed-3363429926
+ certificate self-signed 01
+  30820330 30820218 A0030201 02020101 300D0609 2A864886 F70D0101 0D050030 
+  31312F30 2D060355 04030C26 494F532D 53656C66 2D536967 6E65642D 43657274 
+  69666963 6174652D 33333633 34323939 3236301E 170D3235 30393136 30393137 
+  33355A17 0D333530 39313630 39313733 355A3031 312F302D 06035504 030C2649 
+  4F532D53 656C662D 5369676E 65642D43 65727469 66696361 74652D33 33363334 
+  32393932 36308201 22300D06 092A8648 86F70D01 01010500 0382010F 00308201 
+  0A028201 0100AB30 0568FF99 1D65388E 13806FE2 539A1DB5 F7BF8728 05828C34 
+  497A91DF 2109E028 57D421E3 DECBD189 36C18FCE 8A26F583 75E7B59B AC1319A0 
+  96811FC9 A0494BE2 67FF268A 3A2462B8 38C2D09D CA5E5251 BF06BFDF C05E3C3E 
+  A66AC325 9B52F6C9 523829F6 547A1877 0E64B0B3 13F037C3 209D99B8 12B2EFDF 
+  A01DB5EC E5AD428C 3F9A79E0 830FF585 2F5B955F 3605B61D 4FE5D806 AC23F1CF 
+  707CB170 935D2C52 D640CF49 1DA1DE52 3773F5E2 2FF9584D 4993C774 A91AF441 
+  599A068F C0460A29 C7114073 22488112 DC2A4E67 E6E28F18 D997BEF6 36C31947 
+  A6608FAB C995ED4A D03FA823 6BC56A4A ED8B95A1 4E9E52C7 357DEC70 452D5A2A 
+  B30732E2 13CD0203 010001A3 53305130 1D060355 1D0E0416 041402A8 56C9F26E 
+  1BC6312A B460A627 F9C64365 0FD2301F 0603551D 23041830 16801402 A856C9F2 
+  6E1BC631 2AB460A6 27F9C643 650FD230 0F060355 1D130101 FF040530 030101FF 
+  300D0609 2A864886 F70D0101 0D050003 82010100 88420F59 01E6FAE1 68D6803B 
+  FB149366 C52AFC2C EADF0706 6C7DC5EF 0F30210F DE63FEFC D6AACD3D 7DA22F35 
+  A67A3D5D 1B1D9ACF 845DB5A1 79EEEC68 EC18A0C6 211757C5 FE360FF0 F953990A 
+  C22CF876 49393322 C684AE90 2285508F 16686506 657BEEAD E27EA12B F41808B5 
+  7344777A D58E5C10 26BA37DF 81181091 2BD89F10 2B954657 B80D59C9 81109DEA 
+  60557EBD 89E6AB9B 18CF2F52 70E933A3 A53E4C58 A3BADCCB 71305127 5FF4C3C3 
+  E70DF733 72258C1E F45A17F1 C85B4571 68D87D2C 930F8BCC 580000B0 9C163E65 
+  05BC3D16 AB35861A 3BB18324 D951B56A 3AC72D73 A70660C5 E5E6916E 8DFA84EB 
+  53DAE010 211BD232 AF917F3B 781A70CC CD47A79B
+        quit
+crypto pki certificate chain SLA-TrustPoint
+ certificate ca 01
+  30820321 30820209 A0030201 02020101 300D0609 2A864886 F70D0101 0B050030 
+  32310E30 0C060355 040A1305 43697363 6F312030 1E060355 04031317 43697363 
+  6F204C69 63656E73 696E6720 526F6F74 20434130 1E170D31 33303533 30313934 
+  3834375A 170D3338 30353330 31393438 34375A30 32310E30 0C060355 040A1305 
+  43697363 6F312030 1E060355 04031317 43697363 6F204C69 63656E73 696E6720 
+  526F6F74 20434130 82012230 0D06092A 864886F7 0D010101 05000382 010F0030 
+  82010A02 82010100 A6BCBD96 131E05F7 145EA72C 2CD686E6 17222EA1 F1EFF64D 
+  CBB4C798 212AA147 C655D8D7 9471380D 8711441E 1AAF071A 9CAE6388 8A38E520 
+  1C394D78 462EF239 C659F715 B98C0A59 5BBB5CBD 0CFEBEA3 700A8BF7 D8F256EE 
+  4AA4E80D DB6FD1C9 60B1FD18 FFC69C96 6FA68957 A2617DE7 104FDC5F EA2956AC 
+  7390A3EB 2B5436AD C847A2C5 DAB553EB 69A9A535 58E9F3E3 C0BD23CF 58BD7188 
+  68E69491 20F320E7 948E71D7 AE3BCC84 F10684C7 4BC8E00F 539BA42B 42C68BB7 
+  C7479096 B4CB2D62 EA2F505D C7B062A4 6811D95B E8250FC4 5D5D5FB8 8F27D191 
+  C55F0D76 61F9A4CD 3D992327 A8BB03BD 4E6D7069 7CBADF8B DF5F4368 95135E44 
+  DFC7C6CF 04DD7FD1 02030100 01A34230 40300E06 03551D0F 0101FF04 04030201 
+  06300F06 03551D13 0101FF04 05300301 01FF301D 0603551D 0E041604 1449DC85 
+  4B3D31E5 1B3E6A17 606AF333 3D3B4C73 E8300D06 092A8648 86F70D01 010B0500 
+  03820101 00507F24 D3932A66 86025D9F E838AE5C 6D4DF6B0 49631C78 240DA905 
+  604EDCDE FF4FED2B 77FC460E CD636FDB DD44681E 3A5673AB 9093D3B1 6C9E3D8B 
+  D98987BF E40CBD9E 1AECA0C2 2189BB5C 8FA85686 CD98B646 5575B146 8DFC66A8 
+  467A3DF4 4D565700 6ADF0F0D CF835015 3C04FF7C 21E878AC 11BA9CD2 55A9232C 
+  7CA7B7E6 C1AF74F6 152E99B7 B1FCF9BB E973DE7F 5BDDEB86 C71E3B49 1765308B 
+  5FB0DA06 B92AFE7F 494E8A9E 07B85737 F3A58BE1 1A48A229 C37C1E69 39F08678 
+  80DDCD16 D6BACECA EEBC7CF9 8428787B 35202CDC 60E4616A B623CDBD 230E3AFB 
+  418616A9 4093E049 4D10AB75 27E86F73 932E35B5 8862FDAE 0275156F 719BB2F0 
+  D697DF7F 28
+        quit
+!
+!
+diagnostic bootup level minimal
+!
+license udi pid C1117-4PLTELA sn FGL221491FG
+memory free low-watermark processor 64027
+!
+spanning-tree extend system-id
+!
+enable secret 9 $9$yBkbZy7avmVoQE$li5UGj4qxd7vJ6rpTrDVPIXbqWV/P2/9lY8GA8qgFG2
+!
+username linpaul privilege 15 secret 9 $9$KCfJuz5/enFJZk$eX4E4usvC7InrK4s8fKZgF5jOfFSleZLtblHRSjv6GE
+!
+redundancy
+ mode none
+!
+!
+!
+controller Cellular 0/2/0
+!
+controller VDSL 0/3/0
+!
+!
+vlan internal allocation policy ascending
+!
+!
+!
+!
+!
+!
+interface GigabitEthernet0/0/0
+ description NBN UNI-D (TPG PPPoE no VLAN)
+ no ip address
+ negotiation auto
+ pppoe enable group global
+ pppoe-client dial-pool-number 1
+!
+interface GigabitEthernet0/1/0
+ switchport access vlan 10
+ switchport mode access
+ spanning-tree portfast
+!
+interface GigabitEthernet0/1/1
+ switchport access vlan 10
+ switchport mode access
+ spanning-tree portfast
+!         
+interface GigabitEthernet0/1/2
+ description test port
+ switchport
+ switchport access vlan 20
+ switchport mode access
+ spanning-tree portfast
+!
+interface GigabitEthernet0/1/3
+ switchport
+ switchport access vlan 10
+ switchport mode access
+ spanning-tree portfast
+!
+interface Cellular0/2/0
+ no ip address
+ shutdown
+!
+interface Cellular0/2/1
+ no ip address
+ shutdown
+!
+interface ATM0/3/0
+ no ip address
+ atm oversubscribe factor 2
+!
+interface Ethernet0/3/0
+ no ip address
+ no negotiation auto
+!
+interface Vlan1
+ no ip address
+ shutdown
+!
+interface Vlan10
+ description LAN
+ ip address 192.168.0.1 255.255.255.0
+ ip nat inside
+ ip tcp adjust-mss 1452
+!
+interface Dialer0
+ description TPG NBN HFC PPPoE
+ mtu 1492
+ ip ddns update NOIP
+ ip address negotiated
+ ip nat outside
+ encapsulation ppp
+ ip tcp adjust-mss 1452
+ dialer pool 1
+ dialer idle-timeout 0
+ dialer persistent
+ ipv6 dhcp client pd TPGv6
+ ipv6 address autoconfig default
+ ipv6 enable
+ ppp authentication pap chap callin
+ ppp chap hostname linpaul5
+ ppp chap password 0 Lin226659
+ ppp pap sent-username linpaul5 password 0 Lin226659
+!
+ip forward-protocol nd
+ip forward-protocol udp
+no ip http server
+ip http authentication local
+no ip http secure-server
+!
+ip nat inside source list LAN_NAT interface Dialer0 overload
+ip nat inside source static tcp 192.168.0.45 5678 interface Dialer0 8080
+ip nat inside source static tcp 192.168.0.45 443 interface Dialer0 443
+ip nat inside source static tcp 192.168.0.45 3389 interface Dialer0 3389
+ip nat inside source static tcp 192.168.0.45 80 interface Dialer0 80
+ip route 0.0.0.0 0.0.0.0 Dialer0
+ip ssh bulk-mode 131072
+ip ssh time-out 30
+ip ssh server algorithm mac hmac-sha2-256 hmac-sha2-512
+ip ssh server algorithm encryption aes128-ctr aes192-ctr aes256-ctr
+ip ssh server algorithm hostkey ecdsa-sha2-nistp256 rsa-sha2-512 rsa-sha2-256 ssh-rsa
+!
+ip access-list standard ACL_VTY_MGMT
+ 10 remark Allowed SSH management sources
+ 10 permit 192.168.0.0 0.0.0.255
+ 20 deny any log
+ip access-list standard LAN_NAT
+ 10 permit 192.168.0.0 0.0.0.255
+!
+snmp-server community grafana RO LAN_NAT
+snmp-server location "Home Network"
+snmp-server contact "linpaul"
+snmp-server enable traps snmp linkdown linkup
+snmp-server host 192.168.0.45 grafana 
+!
+!
+control-plane
+!
+!
+line con 0
+ transport input none
+ stopbits 1
+line vty 0 4
+ access-class ACL_VTY_MGMT in
+ exec-timeout 60 0
+ login local
+ transport input ssh
+line vty 5 14
+ access-class ACL_VTY_MGMT in
+ exec-timeout 60 0
+ login local
+ transport input ssh
+!
+ntp server 1.au.pool.ntp.org
+ntp server 2.au.pool.ntp.org
+!
+!
+!
+!
+!
+!
+end
+
+Cisco-TPG-NBN#            
+Cisco-TPG-NBN#
+Cisco-TPG-NBN#sh inv
+
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+INFO: Please use "show license UDI" to get serial number for licensing.
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+NAME: "Chassis", DESCR: "Cisco C1117-4PLTELA Chassis"
+PID: C1117-4PLTELA     , VID: V01  , SN: FGL221491FG
+
+NAME: "Power Supply Module 0", DESCR: "External Power Supply Module with PoE"
+PID: PWR-12V-POE       , VID: V01  , SN:            
+
+NAME: "GE-POE Module", DESCR: "POE Module for On Board GE for Cisco ISR1100"
+PID: ISR-1100-POE2     , VID: V01  , SN: FOC22080P6X
+
+NAME: "module 0", DESCR: "Cisco C1117-4PLTELA Built-In NIM controller"
+PID: C1117-4PLTELA     , VID:      , SN:            
+
+NAME: "NIM subslot 0/0", DESCR: "Front Panel 1 port Gigabitethernet Module"
+PID: C1117-1x1GE       , VID: V01  , SN:            
+
+NAME: "NIM subslot 0/1", DESCR: "C1117-ES-4"
+PID: C1117-ES-4        , VID: V01  , SN:            
+
+NAME: "NIM subslot 0/2", DESCR: "C1117-LTE Module"
+PID: C1117-LTE         , VID: V01  , SN:            
+
+NAME: "Modem on Cellular0/2/0", DESCR: "Sierra Wireless EM7455/EM7430"
+PID: EM7455/EM7430     , VID: 1.0  , SN: 355813070086886
+
+NAME: "NIM subslot 0/3", DESCR: "VADSL_A - Multi-mode xDSL with VDSL and ADSL1/2/2+ Annex A over POTS"
+PID: C1117-VADSL-A     , VID: V01  , SN:            
+
+NAME: "module R0", DESCR: "Cisco C1117-4PLTELA Route Processor"
+PID: C1117-4PLTELA     , VID: V01  , SN: FOC2213187S
+
+NAME: "module F0", DESCR: "Cisco C1117-4PLTELA Forwarding Processor"
+PID: C1117-4PLTELA     , VID:      , SN:            
+
+
