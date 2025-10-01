@@ -1,0 +1,15 @@
+# Ansible / Python
+*.pyc
+__pycache__/
+*.retry
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# AWX
+*.log
