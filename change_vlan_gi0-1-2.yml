@@ -1,0 +1,47 @@
+---
+- name: Change Router Interface VLAN from 20 to 10
+  hosts: all
+  gather_facts: false
+  connection: network_cli
+  
+  vars:
+    interface_name: "GigabitEthernet0/1/2"
+    old_vlan: 20
+    new_vlan: 10
+
+  tasks:
+    - name: Gather current interface configuration
+      cisco.ios.ios_command:
+        commands:
+          - "show running-config interface {{ interface_name }}"
+      register: current_config
+
+    - name: Display current configuration
+      ansible.builtin.debug:
+        msg: "Current config: {{ current_config.stdout_lines }}"
+
+    - name: Configure interface with new VLAN
+      cisco.ios.ios_config:
+        lines:
+          - "switchport access vlan {{ new_vlan }}"
+        parents: "interface {{ interface_name }}"
+        save_when: modified
+      register: config_result
+
+    - name: Verify new configuration
+      cisco.ios.ios_command:
+        commands:
+          - "show running-config interface {{ interface_name }}"
+          - "show interfaces {{ interface_name }} switchport"
+      register: new_config
+
+    - name: Display new configuration
+      ansible.builtin.debug:
+        msg: "New config: {{ new_config.stdout_lines }}"
+
+    - name: Confirm VLAN change
+      ansible.builtin.assert:
+        that:
+          - "'vlan {{ new_vlan }}' in new_config.stdout[0]"
+        success_msg: "Interface GigabitEthernet0/1/2 successfully changed to VLAN 10"
+        fail_msg: "VLAN change verification failed!"
