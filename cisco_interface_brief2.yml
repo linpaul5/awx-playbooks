@@ -1,0 +1,43 @@
+---
+- name: Show Interface Brief on Cisco Router
+  hosts: all
+  gather_facts: no
+  connection: network_cli
+  
+  vars:
+    ansible_network_os: ios
+    ansible_connection: network_cli
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+    
+  tasks:
+    - name: Show IP interface brief
+      ios_command:
+        commands:
+          - show ip interface brief
+      register: interface_brief
+      
+    - name: Display interface brief output
+      debug:
+        msg: "{{ interface_brief.stdout_lines[0] }}"
+        
+    - name: Show interface status
+      ios_command:
+        commands:
+          - show interface status
+      register: interface_status
+      ignore_errors: yes
+      
+    - name: Display interface status (if available)
+      debug:
+        msg: "{{ interface_status.stdout_lines[0] }}"
+      when: interface_status is succeeded
+      
+    - name: Show version for context
+      ios_command:
+        commands:
+          - show version | include IOS
+      register: ios_version
+      
+    - name: Display router version
+      debug:
+        msg: "Router IOS: {{ ios_version.stdout_lines[0] }}"

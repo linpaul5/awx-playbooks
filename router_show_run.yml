@@ -1,0 +1,51 @@
+---
+- name: IOS sanity check with FULL CONFIG
+  hosts: all
+  gather_facts: no
+  connection: network_cli
+  vars:
+    ansible_network_os: cisco.ios.ios
+    ansible_connection: network_cli
+
+  tasks:
+    - name: Get complete running configuration
+      cisco.ios.ios_command:
+        commands:
+          - show running-config
+        wait_for:
+          - result[0] contains "end"
+      register: running_config
+
+    - name: Display COMPLETE running configuration
+      debug:
+        msg: |
+          ==================== COMPLETE RUNNING CONFIGURATION ====================
+          {{ running_config.stdout[0] }}
+          ========================================================================
+
+    - name: Get interface status
+      cisco.ios.ios_command:
+        commands:
+          - show ip interface brief
+      register: interface_brief
+
+    - name: Display interface status
+      debug:
+        msg: |
+          ==================== INTERFACE STATUS ====================
+          {{ interface_brief.stdout[0] }}
+          ==========================================================
+
+    - name: Summary report
+      debug:
+        msg:
+          - "✅ ROUTER CONFIGURATION RETRIEVED SUCCESSFULLY"
+          - "📝 Config Lines: {{ running_config.stdout[0].split('\n') | length }}"
+          - "📁 Config Size: {{ running_config.stdout[0] | length }} characters"
+
+    - name: Save summary to artifacts
+      set_stats:
+        data:
+          config_retrieved: true
+          config_lines: "{{ running_config.stdout[0].split('\n') | length }}"
+          config_size: "{{ running_config.stdout[0] | length }}"

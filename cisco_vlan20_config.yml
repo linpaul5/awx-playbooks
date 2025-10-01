@@ -1,0 +1,91 @@
+---
+- name: Create VLAN 20 and Configure Interface Gi0/1/2
+  hosts: all
+  gather_facts: no
+  connection: network_cli
+  
+  vars:
+    ansible_network_os: ios
+    ansible_connection: network_cli
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+    
+  tasks:
+    - name: Show current VLAN configuration before changes
+      ios_command:
+        commands:
+          - show vlan brief
+      register: vlan_before
+      
+    - name: Display current VLANs
+      debug:
+        msg: "Current VLANs: {{ vlan_before.stdout_lines[0] }}"
+        
+    - name: Create VLAN 20 with name test_vlan20
+      ios_config:
+        lines:
+          - name test_vlan20
+        parents: vlan 20
+        save_when: modified
+        
+    - name: Configure interface Gi0/1/2 for VLAN 20
+      ios_config:
+        lines:
+          - description test port
+          - switchport mode access
+          - switchport access vlan 20
+          - no shutdown
+        parents: interface GigabitEthernet0/1/2
+        save_when: modified
+        
+    - name: Verify VLAN creation
+      ios_command:
+        commands:
+          - show vlan brief | include 20
+      register: vlan_verify
+      
+    - name: Display VLAN 20 information
+      debug:
+        msg: "VLAN 20 Status: {{ vlan_verify.stdout_lines[0] }}"
+        
+    - name: Verify interface configuration
+      ios_command:
+        commands:
+          - show interface GigabitEthernet0/1/2 switchport
+      register: interface_verify
+      
+    - name: Display interface switchport configuration
+      debug:
+        msg: "Interface Gi0/1/2 Config: {{ interface_verify.stdout_lines[0] }}"
+        
+    - name: Show interface status
+      ios_command:
+        commands:
+          - show interface GigabitEthernet0/1/2 status
+      register: int_status
+      ignore_errors: yes
+      
+    - name: Display interface status
+      debug:
+        msg: "Interface Status: {{ int_status.stdout_lines[0] }}"
+      when: int_status is succeeded
+        
+    - name: Show final VLAN configuration
+      ios_command:
+        commands:
+          - show vlan brief
+      register: vlan_after
+      
+    - name: Display final VLAN configuration
+      debug:
+        msg: "Final VLAN Configuration: {{ vlan_after.stdout_lines[0] }}"
+        
+    - name: Configuration Summary
+      debug:
+        msg:
+          - "=== CONFIGURATION SUMMARY ==="
+          - "✅ Created VLAN 20 with name 'test_vlan20'"
+          - "✅ Configured interface Gi0/1/2:"
+          - "   - Description: test port"
+          - "   - Access VLAN: 20"
+          - "   - Port enabled (no shutdown)"
+          - "✅ Configuration saved to startup-config"

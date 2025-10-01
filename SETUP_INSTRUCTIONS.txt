@@ -1,0 +1,68 @@
+===========================================
+AWX VLAN Change Project Setup
+===========================================
+
+📁 Files created in: C:\Users\linpa\awx-vlan-change\
+
+Project Files:
+  ✓ change_vlan.yml      (Main playbook)
+  ✓ requirements.yml     (Ansible collections)
+  ✓ README.md            (Full documentation)
+
+===========================================
+NEXT STEPS:
+===========================================
+
+1️⃣  PUSH TO GIT (Recommended):
+
+   Windows PowerShell:
+   -------------------
+   cd C:\Users\linpa\awx-vlan-change
+   git init
+   git add .
+   git commit -m "Initial commit"
+   git remote add origin <YOUR_GIT_URL>
+   git branch -M main
+   git push -u origin main
+
+   WSL/Linux:
+   ----------
+   cd /mnt/c/Users/linpa/awx-vlan-change
+   git init
+   git add .
+   git commit -m "Initial commit"
+   git remote add origin <YOUR_GIT_URL>
+   git branch -M main
+   git push -u origin main
+
+2️⃣  CREATE AWX PROJECT:
+   - Name: Network VLAN Management
+   - SCM Type: Git
+   - SCM URL: <YOUR_GIT_URL>
+   - Organization: ABC
+
+3️⃣  CREATE CREDENTIALS:
+   - Type: Machine
+   - Username: <router_username>
+   - Password: <router_password>
+   - Privilege Escalation Method: enable
+   - Privilege Escalation Password: <enable_password>
+
+4️⃣  CREATE JOB TEMPLATE:
+   - Name: Change Interface VLAN 20 to 10
+   - Inventory: Home Network
+   - Project: Network VLAN Management
+   - Playbook: change_vlan.yml
+   - Credentials: (select your machine credential)
+
+===========================================
+📖 See README.md for detailed instructions
+===========================================
+
+Router Details (from your AWX):
+- Host: router (192.168.0.1)
+- Inventory: Home Network
+- Organization: ABC
+
+Target Interface: GigabitEthernet0/1/2
+Change: VLAN 20 → VLAN 10
