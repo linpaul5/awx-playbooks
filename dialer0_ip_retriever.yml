@@ -19,15 +19,17 @@
       register: dialer0_output
       failed_when: false
       
-    - name: Debug - Show raw Dialer0 command output
+    - name: Debug - Show device identity and command output
       ansible.builtin.debug:
         msg: |
-          === RAW COMMAND OUTPUT ===
-          Full stdout[0]: "{{ dialer0_output.stdout[0] | default('UNDEFINED') }}"
-          Length: {{ dialer0_output.stdout[0] | default('') | length }}
-          === SEARCH RESULTS ===
-          Found Dialer0 line: "{{ dialer0_line | default('NOT FOUND') }}"
-          Parsed IP: "{{ dialer0_ip | default('NOT PARSED') }}"
+          === DEVICE IDENTITY ===
+          Hostname from show version: "{{ device_test.stdout[0] | default('NO OUTPUT') }}"
+          === INTERFACE BRIEF OUTPUT ({{ dialer0_output.stdout[0] | default('') | length }} chars) ===
+          "{{ dialer0_output.stdout[0] | default('UNDEFINED') }}"
+          === SHOW INTERFACE DIALER0 OUTPUT ===
+          "{{ dialer0_output.stdout[1] | default('UNDEFINED') }}"
+          === SHOW IP INTERFACE DIALER0 OUTPUT ===
+          "{{ dialer0_output.stdout[2] | default('UNDEFINED') }}"
           
     - name: Parse Dialer0 IP address from output
       ansible.builtin.set_fact:
