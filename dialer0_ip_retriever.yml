@@ -19,10 +19,17 @@
       register: dialer0_output
       failed_when: false
       
+    - name: Debug - Show raw Dialer0 command output
+      ansible.builtin.debug:
+        msg: |
+          Raw stdout[0]: "{{ dialer0_output.stdout[0] | default('UNDEFINED') }}"
+          Raw stdout[1]: "{{ dialer0_output.stdout[1] | default('UNDEFINED') }}"
+          Raw stdout[2]: "{{ dialer0_output.stdout[2] | default('UNDEFINED') }}"
+          
     - name: Parse Dialer0 IP address from output
       ansible.builtin.set_fact:
         dialer0_ip: "{{ dialer0_output.stdout[0] | regex_search('Dialer0\\s+(\\S+)', '\\1') | first | default('Not found') }}"
-      when: dialer0_output.stdout[0] is defined and dialer0_output.stdout[0] != ""
+      when: dialer0_output.stdout[0] is defined and dialer0_output.stdout[0] | length > 0
       
     - name: Parse detailed interface information
       ansible.builtin.set_fact:
@@ -34,7 +41,7 @@
               'protocol': dialer0_output.stdout[0] | regex_search('Dialer0\\s+\\S+\\s+\\S+\\s+(\\S+)', '\\1') | first | default('Unknown')
             }
           }}
-      when: dialer0_output.stdout[0] is defined and dialer0_output.stdout[0] != ""
+      when: dialer0_output.stdout[0] is defined and dialer0_output.stdout[0] | length > 0
       
     - name: Display Dialer0 interface summary
       ansible.builtin.debug:
@@ -54,7 +61,7 @@
     - name: Handle case when Dialer0 interface is not found
       ansible.builtin.debug:
         msg: "WARNING: Dialer0 interface not found or not configured on {{ inventory_hostname }}"
-      when: dialer0_output.stdout[0] is not defined or dialer0_output.stdout[0] == ""
+      when: dialer0_output.stdout[0] is not defined or dialer0_output.stdout[0] | length == 0
       
     - name: Create summary report
       ansible.builtin.set_fact:
