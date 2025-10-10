@@ -13,7 +13,7 @@
     - name: Get interface Dialer0 configuration
       cisco.ios.ios_command:
         commands:
-          - "show ip interface brief | include Dialer0"
+          - "show ip interface brief"
           - "show interface Dialer0"
           - "show ip interface Dialer0"
       register: dialer0_output
@@ -22,13 +22,14 @@
     - name: Debug - Show raw Dialer0 command output
       ansible.builtin.debug:
         msg: |
-          Raw stdout[0]: "{{ dialer0_output.stdout[0] | default('UNDEFINED') }}"
-          Raw stdout[1]: "{{ dialer0_output.stdout[1] | default('UNDEFINED') }}"
-          Raw stdout[2]: "{{ dialer0_output.stdout[2] | default('UNDEFINED') }}"
+          Raw stdout[0] length: "{{ dialer0_output.stdout[0] | default('UNDEFINED') | length }}"
+          Found Dialer0 line: "{{ dialer0_line | default('NOT FOUND') }}"
+          Parsed IP: "{{ dialer0_ip | default('NOT PARSED') }}"
           
     - name: Parse Dialer0 IP address from output
       ansible.builtin.set_fact:
         dialer0_ip: "{{ dialer0_output.stdout[0] | regex_search('Dialer0\\s+(\\S+)', '\\1') | first | default('Not found') }}"
+        dialer0_line: "{{ dialer0_output.stdout[0] | regex_search('Dialer0.*', multiline=True) | default('') }}"
       when: dialer0_output.stdout[0] is defined and dialer0_output.stdout[0] | length > 0
       
     - name: Parse detailed interface information
@@ -36,12 +37,12 @@
         dialer0_details: >-
           {{
             {
-              'ip_address': dialer0_output.stdout[0] | regex_search('Dialer0\\s+(\\S+)', '\\1') | first | default('Not assigned'),
-              'status': dialer0_output.stdout[0] | regex_search('Dialer0\\s+\\S+\\s+(\\S+)', '\\1') | first | default('Unknown'),
-              'protocol': dialer0_output.stdout[0] | regex_search('Dialer0\\s+\\S+\\s+\\S+\\s+(\\S+)', '\\1') | first | default('Unknown')
+              'ip_address': dialer0_line | regex_search('Dialer0\\s+(\\S+)', '\\1') | first | default('Not assigned'),
+              'status': dialer0_line | regex_search('Dialer0\\s+\\S+\\s+\\S+\\s+\\S+\\s+(\\S+)', '\\1') | first | default('Unknown'),
+              'protocol': dialer0_line | regex_search('Dialer0\\s+\\S+\\s+\\S+\\s+\\S+\\s+\\S+\\s+(\\S+)', '\\1') | first | default('Unknown')
             }
           }}
-      when: dialer0_output.stdout[0] is defined and dialer0_output.stdout[0] | length > 0
+      when: dialer0_line is defined and dialer0_line | length > 0
       
     - name: Display Dialer0 interface summary
       ansible.builtin.debug:
