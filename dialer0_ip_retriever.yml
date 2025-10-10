@@ -1,0 +1,71 @@
+---
+- name: Retrieve Dialer0 interface IP address
+  hosts: all
+  gather_facts: false
+  tasks:
+    - name: Sanity check - Ensure we can connect to device
+      cisco.ios.ios_facts:
+        gather_subset: min
+      register: device_facts
+      
+    - name: Get interface Dialer0 configuration
+      cisco.ios.ios_command:
+        commands:
+          - "show ip interface brief | include Dialer0"
+          - "show interface Dialer0"
+          - "show ip interface Dialer0"
+      register: dialer0_output
+      failed_when: false
+      
+    - name: Parse Dialer0 IP address from output
+      ansible.builtin.set_fact:
+        dialer0_ip: "{{ dialer0_output.stdout[0] | regex_search('Dialer0\\s+(\\S+)', '\\1') | first | default('Not found') }}"
+      when: dialer0_output.stdout[0] is defined and dialer0_output.stdout[0] != ""
+      
+    - name: Parse detailed interface information
+      ansible.builtin.set_fact:
+        dialer0_details: >-
+          {{
+            {
+              'ip_address': dialer0_output.stdout[0] | regex_search('Dialer0\\s+(\\S+)', '\\1') | first | default('Not assigned'),
+              'status': dialer0_output.stdout[0] | regex_search('Dialer0\\s+\\S+\\s+(\\S+)', '\\1') | first | default('Unknown'),
+              'protocol': dialer0_output.stdout[0] | regex_search('Dialer0\\s+\\S+\\s+\\S+\\s+(\\S+)', '\\1') | first | default('Unknown')
+            }
+          }}
+      when: dialer0_output.stdout[0] is defined and dialer0_output.stdout[0] != ""
+      
+    - name: Display Dialer0 interface summary
+      ansible.builtin.debug:
+        msg: |
+          === Dialer0 Interface Information ===
+          Device: {{ inventory_hostname }}
+          IP Address: {{ dialer0_details.ip_address | default('Interface not found') }}
+          Status: {{ dialer0_details.status | default('Unknown') }}
+          Protocol: {{ dialer0_details.protocol | default('Unknown') }}
+      when: dialer0_details is defined
+      
+    - name: Display detailed interface output
+      ansible.builtin.debug:
+        var: dialer0_output.stdout
+      when: dialer0_output.stdout is defined
+      
+    - name: Handle case when Dialer0 interface is not found
+      ansible.builtin.debug:
+        msg: "WARNING: Dialer0 interface not found or not configured on {{ inventory_hostname }}"
+      when: dialer0_output.stdout[0] is not defined or dialer0_output.stdout[0] == ""
+      
+    - name: Create summary report
+      ansible.builtin.set_fact:
+        dialer0_report: |
+          Device: {{ inventory_hostname }}
+          Timestamp: {{ ansible_date_time.iso8601 }}
+          Dialer0 IP: {{ dialer0_details.ip_address | default('Not found') }}
+          Interface Status: {{ dialer0_details.status | default('Not found') }}
+      when: dialer0_details is defined
+      
+    - name: Save report to file (optional)
+      ansible.builtin.copy:
+        content: "{{ dialer0_report }}"
+        dest: "/tmp/{{ inventory_hostname }}_dialer0_report.txt"
+      delegate_to: localhost
+      when: dialer0_report is defined and save_report is defined and save_report | bool
