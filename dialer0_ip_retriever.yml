@@ -22,7 +22,10 @@
     - name: Debug - Show raw Dialer0 command output
       ansible.builtin.debug:
         msg: |
-          Raw stdout[0] length: "{{ dialer0_output.stdout[0] | default('UNDEFINED') | length }}"
+          === RAW COMMAND OUTPUT ===
+          Full stdout[0]: "{{ dialer0_output.stdout[0] | default('UNDEFINED') }}"
+          Length: {{ dialer0_output.stdout[0] | default('') | length }}
+          === SEARCH RESULTS ===
           Found Dialer0 line: "{{ dialer0_line | default('NOT FOUND') }}"
           Parsed IP: "{{ dialer0_ip | default('NOT PARSED') }}"
           
