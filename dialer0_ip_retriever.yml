@@ -3,10 +3,12 @@
   hosts: all
   gather_facts: false
   tasks:
-    - name: Sanity check - Ensure we can connect to device
-      cisco.ios.ios_facts:
-        gather_subset: min
-      register: device_facts
+    - name: Test connection to device
+      cisco.ios.ios_command:
+        commands:
+          - "show version | include uptime"
+      register: device_test
+      failed_when: false
       
     - name: Get interface Dialer0 configuration
       cisco.ios.ios_command:
