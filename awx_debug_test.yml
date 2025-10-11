@@ -1,0 +1,76 @@
+---
+- name: AWX Variable Debug Test
+  hosts: all
+  gather_facts: no
+  vars:
+    panos_ip: "{{ ansible_host | default('192.168.0.100') }}"
+    panos_api_key: "LUFRPT1mVkM5RHlSTm5uRFA0MmdUQWhVZFZiMjdHS2s9V0IrbVBRQXBnaHRKZUxLcmxsQU5ESjFzYkIyWDNsZHhVSlhvbDR6N2tXNUk1b2QxTG0yZlYrYnZHYXZXS0ZOVw=="
+    
+  tasks:
+    - name: 🔍 Debug ALL variables from AWX
+      debug:
+        msg:
+          - "=== AWX VARIABLE DEBUG ==="
+          - "rule_action: '{{ rule_action | default('NOT_PROVIDED') }}'"
+          - "rule_name: '{{ rule_name | default('NOT_PROVIDED') }}'"
+          - "action_type: '{{ action_type | default('NOT_PROVIDED') }}'"
+          - "rule_description: '{{ rule_description | default('NOT_PROVIDED') }}'"
+          - "source_zones: '{{ source_zones | default('NOT_PROVIDED') }}'"
+          - "applications: '{{ applications | default('NOT_PROVIDED') }}'"
+          - "=== NETWORK TEST ==="
+          - "Palo Alto IP: {{ panos_ip }}"
+          - "API Key Length: {{ panos_api_key | length }}"
+
+    - name: 🌐 Test basic connectivity (no auth)
+      uri:
+        url: "https://{{ panos_ip }}/api/"
+        method: GET
+        validate_certs: false
+        timeout: 10
+        status_code: [200, 400, 403, 404]
+      register: connectivity_test
+      ignore_errors: yes
+
+    - name: 📊 Connectivity result
+      debug:
+        msg:
+          - "HTTP Status: {{ connectivity_test.status | default('FAILED') }}"
+          - "Connection: {{ 'SUCCESS' if connectivity_test.status is defined else 'FAILED' }}"
+
+    - name: 🔑 Test API authentication
+      uri:
+        url: "https://{{ panos_ip }}/api/"
+        method: GET
+        validate_certs: false
+        timeout: 10
+        body_format: form-urlencoded
+        body:
+          type: keygen
+          user: admin
+          password: "Lin@226659"
+        status_code: [200, 400, 403]
+      register: auth_test
+      ignore_errors: yes
+
+    - name: 🔐 Authentication result
+      debug:
+        msg:
+          - "Auth Status: {{ auth_test.status | default('FAILED') }}"
+          - "Auth Response: {{ 'SUCCESS' if auth_test.status == 200 else 'CHECK CREDENTIALS' }}"
+
+    - name: 🎯 SUMMARY
+      debug:
+        msg:
+          - "🔍 VARIABLE CHECK:"
+          - "  Variables from AWX: {{ 'RECEIVED' if rule_action is defined else 'NOT RECEIVED' }}"
+          - ""
+          - "🌐 NETWORK CHECK:"
+          - "  Basic connectivity: {{ 'OK' if connectivity_test.status is defined else 'FAILED' }}"
+          - ""
+          - "🔑 AUTH CHECK:"
+          - "  API authentication: {{ 'OK' if auth_test.status == 200 else 'FAILED' }}"
+          - ""
+          - "📋 NEXT STEPS:"
+          - "  1. If variables NOT RECEIVED: Check AWX extra variables input"
+          - "  2. If connectivity FAILED: Check Palo Alto VM is running"
+          - "  3. If auth FAILED: Check admin password or generate new API key"
