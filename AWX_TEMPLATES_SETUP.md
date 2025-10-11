@@ -34,7 +34,19 @@ rule_name: "Allow-Web-Browsing"
 rule_description: "Permit standard web traffic from internal network"
 source_zones: ["trust"]
 destination_zones: ["untrust"]
-source_addresses: ["192.168.1.0/24"]
+source_addresses: ["192.168.0.0/24"]  # Your actual network range
+applications: ["web-browsing", "ssl"]
+action_type: "allow"
+```
+
+#### Simple Allow Rule (Any Source):
+```yaml
+rule_action: "create"
+rule_name: "Allow-Web-Any-Source"
+rule_description: "Allow web browsing from any source"
+source_zones: ["trust"]
+destination_zones: ["untrust"]
+source_addresses: ["any"]  # Simpler - allows from anywhere
 applications: ["web-browsing", "ssl"]
 action_type: "allow"
 ```

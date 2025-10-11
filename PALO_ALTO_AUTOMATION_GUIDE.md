@@ -47,8 +47,9 @@ This repository contains comprehensive Ansible playbooks for automating Palo Alt
 rule_action: "create"
 rule_name: "Allow-Web-Browsing"
 rule_description: "Permit standard web traffic"
-source_zones: ["internal"]
-destination_zones: ["external"] 
+source_zones: ["trust"]
+destination_zones: ["untrust"] 
+source_addresses: ["192.168.0.0/24"]  # Your actual network
 applications: ["web-browsing", "ssl"]
 action_type: "allow"
 ```
