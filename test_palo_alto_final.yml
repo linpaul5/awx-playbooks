@@ -1,0 +1,54 @@
+---
+- name: Palo Alto VM Connection Test - FINAL VERSION
+  hosts: all
+  gather_facts: no
+  vars:
+    panos_ip: "{{ ansible_host | default('192.168.0.100') }}"
+    panos_api_key: "LUFRPT1mVkM5RHlSTm5uRFA0MmdUQWhVZFZiMjdHS2s9V0IrbVBRQXBnaHRKZUxLcmxsQU5DSjFzYkIyWDNsZHhVSlhvbDR6N2tXNUk1b2QxTG0yZlYrYnZHYXZXS0ZOVw=="
+    
+  tasks:
+    - name: Test basic connectivity to Palo Alto VM
+      uri:
+        url: "https://{{ panos_ip }}/api/"
+        method: GET
+        validate_certs: false
+        timeout: 30
+        status_code: [200, 400, 403]
+      register: connectivity_test
+      
+    - name: Show connectivity result
+      debug:
+        msg: "✅ Palo Alto VM at {{ panos_ip }} is reachable (HTTP {{ connectivity_test.status }})"
+        
+    - name: Get system information using API key
+      uri:
+        url: "https://{{ panos_ip }}/api/"
+        method: GET
+        validate_certs: false
+        timeout: 30
+        body_format: form-urlencoded
+        body:
+          type: op
+          cmd: "<show><system><info></info></system></show>"
+          key: "{{ panos_api_key }}"
+      register: system_info
+      
+    - name: Display success message
+      debug:
+        msg: 
+          - "🎉🎉🎉 SUCCESS! AWX-Palo Alto Integration WORKING! 🎉🎉🎉"
+          - "✅ Network connectivity: PASSED"
+          - "✅ HTTPS API access: PASSED" 
+          - "✅ API authentication: PASSED"
+          - "✅ System information retrieved: PASSED"
+          - "🚀 Your AWX can now automate Palo Alto VM!"
+          - "Response length: {{ system_info.content | length }} characters"
+      when: system_info.status == 200
+          
+    - name: Show authentication error if failed
+      debug:
+        msg: 
+          - "❌ API authentication failed"
+          - "HTTP Status: {{ system_info.status }}"
+          - "This usually means API key needs regeneration"
+      when: system_info.status != 200
