@@ -20,21 +20,27 @@ $templates = @(
     @{
         Name = "Palo Alto - Deploy Security Rule"
         Description = "Create, update, delete, or list Palo Alto security rules"
+        Project = "Palo Alto Playbooks"
         Playbook = "palo_alto_security_rules.yml"
+        ExecutionEnv = "AWX EE (latest)"
         Variables = "Required - Prompt on Launch"
         Purpose = "Production rule management"
     },
     @{
         Name = "Palo Alto - Rule Demo"  
         Description = "Deploy demonstration security rules"
+        Project = "Palo Alto Playbooks"
         Playbook = "palo_alto_rule_demo.yml"
+        ExecutionEnv = "AWX EE (latest)"
         Variables = "None needed"
         Purpose = "Show automation capabilities"
     },
     @{
         Name = "Palo Alto - Cleanup Demo Rules"
         Description = "Remove all demonstration rules"
-        Playbook = "palo_alto_cleanup.yml" 
+        Project = "Palo Alto Playbooks"
+        Playbook = "palo_alto_cleanup.yml"
+        ExecutionEnv = "AWX EE (latest)"
         Variables = "None needed"
         Purpose = "Environment cleanup"
     }
@@ -43,7 +49,9 @@ $templates = @(
 Write-Host "`nTEMPLATES TO CREATE:" -ForegroundColor Yellow
 foreach ($template in $templates) {
     Write-Host "`n$($template.Name)" -ForegroundColor Cyan
+    Write-Host "   Project: $($template.Project)"
     Write-Host "   Playbook: $($template.Playbook)"
+    Write-Host "   Execution Environment: $($template.ExecutionEnv)"
     Write-Host "   Variables: $($template.Variables)"
     Write-Host "   Purpose: $($template.Purpose)"
 }

@@ -4,9 +4,9 @@
 ### 📋 Prerequisites Checklist
 Before creating job templates, ensure you have:
 - ✅ AWX running at http://localhost:32237
-- ✅ Project "awx-playbooks" synced with GitHub
+- ✅ Project "Palo Alto Playbooks" synced with GitHub
 - ✅ Inventory "Palo Alto Firewall" with host 192.168.0.100
-- ✅ Execution Environment "awx-palo-ee:latest" 
+- ✅ Execution Environment "AWX EE (latest)" - Default working environment
 - ✅ Credential "Palo Alto API Key" (if separate from playbook)
 
 ---
@@ -19,8 +19,8 @@ Name: Palo Alto - Deploy Security Rule
 Description: Create, update, delete, or list Palo Alto security rules
 Job Type: Run
 Inventory: Palo Alto Firewall
-Project: awx-playbooks
-Execution Environment: awx-palo-ee:latest
+Project: Palo Alto Playbooks
+Execution Environment: AWX EE (latest)
 Playbook: palo_alto_security_rules.yml
 Prompt on Launch: ✅ Extra Variables
 ```
@@ -69,8 +69,8 @@ Name: Palo Alto - Rule Demo
 Description: Deploy demonstration security rules (Web Allow + Social Block)
 Job Type: Run
 Inventory: Palo Alto Firewall
-Project: awx-playbooks
-Execution Environment: awx-palo-ee:latest
+Project: Palo Alto Playbooks
+Execution Environment: AWX EE (latest)
 Playbook: palo_alto_rule_demo.yml
 Prompt on Launch: ❌ (No variables needed)
 ```
@@ -91,8 +91,8 @@ Name: Palo Alto - Cleanup Demo Rules
 Description: Remove all demonstration rules from firewall
 Job Type: Run
 Inventory: Palo Alto Firewall
-Project: awx-playbooks
-Execution Environment: awx-palo-ee:latest
+Project: Palo Alto Playbooks
+Execution Environment: AWX EE (latest)
 Playbook: palo_alto_cleanup.yml
 Prompt on Launch: ❌ (No variables needed)
 ```

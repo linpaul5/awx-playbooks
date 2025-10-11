@@ -59,9 +59,9 @@ def check_prerequisites(token):
     try:
         response = requests.get(f"{AWX_URL}/api/v2/projects/", headers=headers)
         projects = response.json()['results']
-        project_exists = any(p['name'] == 'awx-playbooks' for p in projects)
+        project_exists = any(p['name'] == 'Palo Alto Playbooks' for p in projects)
         status = "✅" if project_exists else "❌"
-        checks.append(f"{status} Project 'awx-playbooks': {'Found' if project_exists else 'Not found'}")
+        checks.append(f"{status} Project 'Palo Alto Playbooks': {'Found' if project_exists else 'Not found'}")
     except Exception as e:
         checks.append(f"❌ Error checking projects: {e}")
     
@@ -79,9 +79,9 @@ def check_prerequisites(token):
     try:
         response = requests.get(f"{AWX_URL}/api/v2/execution_environments/", headers=headers)
         ees = response.json()['results']
-        ee_exists = any('awx-palo-ee' in ee['name'] for ee in ees)
+        ee_exists = any('AWX EE' in ee['name'] or 'awx-ee' in ee['name'] for ee in ees)
         status = "✅" if ee_exists else "❌"
-        checks.append(f"{status} Execution Environment 'awx-palo-ee': {'Found' if ee_exists else 'Not found'}")
+        checks.append(f"{status} Execution Environment 'AWX EE (latest)': {'Found' if ee_exists else 'Not found'}")
     except Exception as e:
         checks.append(f"❌ Error checking execution environments: {e}")
     
@@ -101,9 +101,9 @@ def suggest_next_steps(checks):
         for item in missing_items:
             print(f"   {item}")
         print("\n🔧 RESOLUTION:")
-        print("1. Ensure your AWX project 'awx-playbooks' is synced")
+        print("1. Ensure your AWX project 'Palo Alto Playbooks' is synced")
         print("2. Create Palo Alto inventory with host 192.168.0.100")
-        print("3. Build execution environment awx-palo-ee:latest")
+        print("3. Use default execution environment AWX EE (latest)")
         print("4. Re-run this script to verify")
 
 def main():

@@ -90,22 +90,22 @@ rule_name: "Rule-To-Remove"
 ## 🔧 AWX Job Template Setup
 
 ### 1. Create Job Template: "Deploy Security Rule"
-- **Project**: awx-playbooks
+- **Project**: Palo Alto Playbooks
 - **Playbook**: `palo_alto_security_rules.yml`
 - **Inventory**: Palo Alto Firewall
-- **Execution Environment**: awx-palo-ee:latest
+- **Execution Environment**: AWX EE (latest)
 
 ### 2. Create Job Template: "Rule Deployment Demo"
-- **Project**: awx-playbooks  
+- **Project**: Palo Alto Playbooks  
 - **Playbook**: `palo_alto_rule_demo.yml`
 - **Inventory**: Palo Alto Firewall
-- **Execution Environment**: awx-palo-ee:latest
+- **Execution Environment**: AWX EE (latest)
 
 ### 3. Create Job Template: "Cleanup Demo Rules"
-- **Project**: awx-playbooks
+- **Project**: Palo Alto Playbooks
 - **Playbook**: `palo_alto_cleanup.yml` 
 - **Inventory**: Palo Alto Firewall
-- **Execution Environment**: awx-palo-ee:latest
+- **Execution Environment**: AWX EE (latest)
 
 ## 📊 Variable Reference
 
