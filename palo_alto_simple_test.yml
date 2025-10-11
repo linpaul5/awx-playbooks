@@ -1,0 +1,84 @@
+---
+- name: Palo Alto Simple Rule Test
+  hosts: all
+  gather_facts: no
+  vars:
+    panos_ip: "{{ ansible_host | default('192.168.0.100') }}"
+    panos_api_key: "LUFRPT1mVkM5RHlSTm5uRFA0MmdUQWhVZFZiMjdHS2s9V0IrbVBRQXBnaHRKZUxLcmxsQU5ESjFzYkIyWDNsZHhVSlhvbDR6N2tXNUk1b2QxTG0yZlYrYnZHYXZXS0ZOVw=="
+    
+  tasks:
+    - name: 🔍 Test connectivity to Palo Alto firewall
+      uri:
+        url: "https://{{ panos_ip }}/api/"
+        method: GET
+        validate_certs: false
+        timeout: 30
+        status_code: [200, 400, 403]
+      register: connectivity_test
+      
+    - name: ✅ Connectivity confirmed
+      debug:
+        msg: "Palo Alto VM at {{ panos_ip }} is reachable (HTTP {{ connectivity_test.status }})"
+        
+    - name: 📋 Show variables received from AWX
+      debug:
+        msg: 
+          - "Rule Action: {{ rule_action | default('NOT SET') }}"
+          - "Rule Name: {{ rule_name | default('NOT SET') }}"
+          - "Action Type: {{ action_type | default('NOT SET') }}"
+        
+    - name: 🆕 Create security rule (SIMPLE VERSION)
+      uri:
+        url: "https://{{ panos_ip }}/api/"
+        method: POST
+        validate_certs: false
+        timeout: 30
+        body_format: form-urlencoded
+        body:
+          type: config
+          action: set
+          xpath: "/config/devices/entry[@name='localhost.localdomain']/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[@name='{{ rule_name | default('AWX-Simple-Test') }}']"
+          element: |
+            <from><member>trust</member></from>
+            <to><member>untrust</member></to>
+            <source><member>any</member></source>
+            <destination><member>any</member></destination>
+            <application><member>web-browsing</member></application>
+            <service><member>application-default</member></service>
+            <action>{{ action_type | default('allow') }}</action>
+            <description>{{ rule_description | default('Simple test rule created by AWX') }}</description>
+            <disabled>no</disabled>
+          key: "{{ panos_api_key }}"
+      register: rule_creation
+      when: (rule_action | default('create')) == 'create'
+      
+    - name: ✅ Rule creation result
+      debug:
+        msg: 
+          - "🎉 Rule Creation Status: {{ rule_creation.status | default('Not created') }}"
+          - "Rule Name: {{ rule_name | default('AWX-Simple-Test') }}"
+      when: rule_creation is defined
+      
+    - name: 💾 Commit changes
+      uri:
+        url: "https://{{ panos_ip }}/api/"
+        method: POST
+        validate_certs: false
+        timeout: 60
+        body_format: form-urlencoded
+        body:
+          type: commit
+          cmd: "<commit></commit>"
+          key: "{{ panos_api_key }}"
+      register: commit_result
+      when: (rule_action | default('create')) == 'create'
+      
+    - name: 🎯 SUCCESS SUMMARY
+      debug:
+        msg: 
+          - "🚀 SIMPLE RULE AUTOMATION TEST COMPLETE!"
+          - "✅ Connectivity: OK"
+          - "✅ Rule Creation: {{ 'SUCCESS' if rule_creation.status == 200 else 'CHECK STATUS' }}"
+          - "✅ Commit: {{ 'SUCCESS' if commit_result.status == 200 else 'CHECK STATUS' }}"
+          - ""
+          - "Next: Check Palo Alto GUI for your new rule!"
