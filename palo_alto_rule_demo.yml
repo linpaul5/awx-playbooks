@@ -1,0 +1,48 @@
+---
+- name: Palo Alto Rule Deployment Demo
+  hosts: all
+  gather_facts: no
+  vars:
+    panos_ip: "{{ ansible_host | default('192.168.0.100') }}"
+    panos_api_key: "LUFRPT1mVkM5RHlSTm5uRFA0MmdUQWhVZFZiMjdHS2s9V0IrbVBRQXBnaHRKZUxLcmxsQU5ESjFzYkIyWDNsZHhVSlhvbDR6N2tXNUk1b2QxTG0yZlYrYnZHYXZXS0ZOVw=="
+    
+  tasks:
+    - name: 🎯 Demo 1 - Create Web Allow Rule
+      include: palo_alto_security_rules.yml
+      vars:
+        rule_action: "create"
+        rule_name: "AWX-Demo-Web-Allow"
+        rule_description: "Allow web browsing - Created by AWX Demo"
+        source_zones: ["trust"]
+        destination_zones: ["untrust"]
+        applications: ["web-browsing", "ssl"]
+        action_type: "allow"
+        
+    - name: 🛑 Demo 2 - Create Social Media Block Rule
+      include: palo_alto_security_rules.yml
+      vars:
+        rule_action: "create"
+        rule_name: "AWX-Demo-Block-Social"
+        rule_description: "Block social media apps - Created by AWX Demo"
+        applications: ["facebook", "twitter", "instagram"]
+        action_type: "deny"
+        
+    - name: 📊 Demo 3 - List all current rules
+      include: palo_alto_security_rules.yml
+      vars:
+        rule_action: "list"
+        
+    - name: 🎉 Demo Complete
+      debug:
+        msg:
+          - "🚀 PALO ALTO RULE AUTOMATION DEMO COMPLETE!"
+          - ""
+          - "✅ Created Rules:"
+          - "   • AWX-Demo-Web-Allow (Allow web traffic)"
+          - "   • AWX-Demo-Block-Social (Deny social media)"
+          - ""
+          - "🎮 Next Steps:"
+          - "   • Test the rules in Palo Alto GUI"
+          - "   • Modify rules with different parameters"
+          - "   • Create cleanup automation"
+          - "   • Build production rule sets"

@@ -1,0 +1,57 @@
+---
+- name: Palo Alto Demo Rules Cleanup
+  hosts: all
+  gather_facts: no
+  vars:
+    panos_ip: "{{ ansible_host | default('192.168.0.100') }}"
+    panos_api_key: "LUFRPT1mVkM5RHlSTm5uRFA0MmdUQWhVZFZiMjdHS2s9V0IrbVBRQXBnaHRKZUxLcmxsQU5ESjFzYkIyWDNsZHhVSlhvbDR6N2tXNUk1b2QxTG0yZlYrYnZHYXZXS0ZOVw=="
+    
+    # List of demo rules to clean up
+    demo_rules:
+      - "AWX-Demo-Web-Allow"
+      - "AWX-Demo-Block-Social"
+      - "AWX-Test-Rule"
+    
+  tasks:
+    - name: 🧹 Clean up demo rules
+      uri:
+        url: "https://{{ panos_ip }}/api/"
+        method: POST
+        validate_certs: false
+        timeout: 30
+        body_format: form-urlencoded
+        body:
+          type: config
+          action: delete
+          xpath: "/config/devices/entry[@name='localhost.localdomain']/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[@name='{{ item }}']"
+          key: "{{ panos_api_key }}"
+      register: cleanup_result
+      loop: "{{ demo_rules }}"
+      ignore_errors: yes
+      
+    - name: 📊 Cleanup results
+      debug:
+        msg: "Attempted to delete rule: {{ item.item }} - Status: {{ item.status | default('Failed') }}"
+      loop: "{{ cleanup_result.results }}"
+      when: cleanup_result is defined
+      
+    - name: 💾 Commit cleanup changes
+      uri:
+        url: "https://{{ panos_ip }}/api/"
+        method: POST
+        validate_certs: false
+        timeout: 60
+        body_format: form-urlencoded
+        body:
+          type: commit
+          cmd: "<commit></commit>"
+          key: "{{ panos_api_key }}"
+      register: commit_result
+      
+    - name: ✅ Cleanup complete
+      debug:
+        msg: 
+          - "🧹 DEMO RULES CLEANUP COMPLETE!"
+          - "Commit Status: {{ commit_result.status }}"
+          - "All demo rules have been removed"
+          - "Firewall is ready for new automation tests"

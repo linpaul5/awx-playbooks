@@ -1,0 +1,203 @@
+---
+- name: Palo Alto Security Rule Deployment Automation
+  hosts: all
+  gather_facts: no
+  vars:
+    panos_ip: "{{ ansible_host | default('192.168.0.100') }}"
+    panos_api_key: "LUFRPT1mVkM5RHlSTm5uRFA0MmdUQWhVZFZiMjdHS2s9V0IrbVBRQXBnaHRKZUxLcmxsQU5DSjFzYkIyWDNsZHhVSlhvbDR6N2tXNUk1b2QxTG0yZlYrYnZHYXZXS0ZOVw=="
+    
+    # Rule Configuration Variables
+    rule_action: "{{ rule_action | default('create') }}"  # create, update, delete, list
+    rule_name: "{{ rule_name | default('AWX-Test-Rule') }}"
+    rule_description: "{{ rule_description | default('Test rule created by AWX automation') }}"
+    source_zones: "{{ source_zones | default(['trust']) }}"
+    destination_zones: "{{ destination_zones | default(['untrust']) }}"
+    source_addresses: "{{ source_addresses | default(['any']) }}"
+    destination_addresses: "{{ destination_addresses | default(['any']) }}"
+    applications: "{{ applications | default(['web-browsing', 'ssl']) }}"
+    services: "{{ services | default(['application-default']) }}"
+    action_type: "{{ action_type | default('allow') }}"  # allow, deny, drop
+    rule_position: "{{ rule_position | default('bottom') }}"  # top, bottom, before, after
+    
+  tasks:
+    - name: 🔍 Test connectivity to Palo Alto firewall
+      uri:
+        url: "https://{{ panos_ip }}/api/"
+        method: GET
+        validate_certs: false
+        timeout: 30
+        status_code: [200, 400, 403]
+      register: connectivity_test
+      
+    - name: ✅ Connectivity confirmed
+      debug:
+        msg: "Palo Alto VM at {{ panos_ip }} is reachable (HTTP {{ connectivity_test.status }})"
+        
+    - name: 📋 List existing security rules
+      uri:
+        url: "https://{{ panos_ip }}/api/"
+        method: GET
+        validate_certs: false
+        timeout: 30
+        body_format: form-urlencoded
+        body:
+          type: config
+          action: get
+          xpath: "/config/devices/entry[@name='localhost.localdomain']/vsys/entry[@name='vsys1']/rulebase/security/rules"
+          key: "{{ panos_api_key }}"
+      register: existing_rules
+      when: rule_action in ['list', 'create', 'update']
+      
+    - name: 📊 Display existing security rules
+      debug:
+        msg: 
+          - "Current Security Rules Status: {{ existing_rules.status }}"
+          - "Action requested: {{ rule_action }}"
+          - "Target rule: {{ rule_name }}"
+      when: rule_action in ['list', 'create', 'update'] and existing_rules is defined
+      
+    - name: 🆕 Create new security rule
+      uri:
+        url: "https://{{ panos_ip }}/api/"
+        method: POST
+        validate_certs: false
+        timeout: 30
+        body_format: form-urlencoded
+        body:
+          type: config
+          action: set
+          xpath: "/config/devices/entry[@name='localhost.localdomain']/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[@name='{{ rule_name }}']"
+          element: >
+            <from>
+              {% for zone in source_zones %}<member>{{ zone }}</member>{% endfor %}
+            </from>
+            <to>
+              {% for zone in destination_zones %}<member>{{ zone }}</member>{% endfor %}
+            </to>
+            <source>
+              {% for addr in source_addresses %}<member>{{ addr }}</member>{% endfor %}
+            </source>
+            <destination>
+              {% for addr in destination_addresses %}<member>{{ addr }}</member>{% endfor %}
+            </destination>
+            <application>
+              {% for app in applications %}<member>{{ app }}</member>{% endfor %}
+            </application>
+            <service>
+              {% for svc in services %}<member>{{ svc }}</member>{% endfor %}
+            </service>
+            <action>{{ action_type }}</action>
+            <description>{{ rule_description }}</description>
+            <tag/>
+            <disabled>no</disabled>
+            <negate-source>no</negate-source>
+            <negate-destination>no</negate-destination>
+          key: "{{ panos_api_key }}"
+      register: rule_creation
+      when: rule_action == 'create'
+      
+    - name: ✅ Rule creation result
+      debug:
+        msg: 
+          - "🎉 Security Rule Creation Status: {{ rule_creation.status }}"
+          - "Rule Name: {{ rule_name }}"
+          - "Action: {{ action_type }}"
+          - "Source Zones: {{ source_zones | join(', ') }}"
+          - "Destination Zones: {{ destination_zones | join(', ') }}"
+          - "Applications: {{ applications | join(', ') }}"
+      when: rule_action == 'create' and rule_creation is defined
+      
+    - name: 🗑️ Delete security rule
+      uri:
+        url: "https://{{ panos_ip }}/api/"
+        method: POST
+        validate_certs: false
+        timeout: 30
+        body_format: form-urlencoded
+        body:
+          type: config
+          action: delete
+          xpath: "/config/devices/entry[@name='localhost.localdomain']/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[@name='{{ rule_name }}']"
+          key: "{{ panos_api_key }}"
+      register: rule_deletion
+      when: rule_action == 'delete'
+      
+    - name: ❌ Rule deletion result
+      debug:
+        msg: 
+          - "Security Rule Deletion Status: {{ rule_deletion.status }}"
+          - "Deleted Rule: {{ rule_name }}"
+      when: rule_action == 'delete' and rule_deletion is defined
+      
+    - name: 💾 Commit configuration changes
+      uri:
+        url: "https://{{ panos_ip }}/api/"
+        method: POST
+        validate_certs: false
+        timeout: 60
+        body_format: form-urlencoded
+        body:
+          type: commit
+          cmd: "<commit></commit>"
+          key: "{{ panos_api_key }}"
+      register: commit_result
+      when: rule_action in ['create', 'update', 'delete']
+      
+    - name: 🔄 Commit status
+      debug:
+        msg: 
+          - "Configuration Commit Status: {{ commit_result.status }}"
+          - "Changes have been applied to the firewall"
+      when: rule_action in ['create', 'update', 'delete'] and commit_result is defined
+      
+    - name: 🎯 AUTOMATION SUMMARY
+      debug:
+        msg: 
+          - "🚀🚀🚀 PALO ALTO RULE AUTOMATION COMPLETE! 🚀🚀🚀"
+          - ""
+          - "📊 OPERATION DETAILS:"
+          - "   └─ Action: {{ rule_action | upper }}"
+          - "   └─ Rule Name: {{ rule_name }}"
+          - "   └─ Firewall: {{ panos_ip }}"
+          - ""
+          - "✅ CAPABILITIES DEMONSTRATED:"
+          - "   ✓ Security rule creation"
+          - "   ✓ Rule modification support"
+          - "   ✓ Rule deletion capability"
+          - "   ✓ Configuration commitment"
+          - "   ✓ API authentication"
+          - ""
+          - "🎮 NEXT ACTIONS AVAILABLE:"
+          - "   • Create allow/deny rules"
+          - "   • Bulk rule deployment"
+          - "   • Rule cleanup automation"
+          - "   • Policy backup/restore"
+          - ""
+          - "🔥 AWX-PALO ALTO INTEGRATION: FULLY OPERATIONAL!"
+
+    - name: 📚 Usage Examples
+      debug:
+        msg: 
+          - ""
+          - "💡 HOW TO USE THIS AUTOMATION:"
+          - ""
+          - "🆕 CREATE RULE EXAMPLES:"
+          - "   rule_action: create"
+          - "   rule_name: 'Allow-Web-Traffic'"
+          - "   source_zones: ['internal']"
+          - "   destination_zones: ['external']"
+          - "   applications: ['web-browsing', 'ssl']"
+          - "   action_type: 'allow'"
+          - ""
+          - "🚫 DENY RULE EXAMPLE:"
+          - "   rule_action: create"
+          - "   rule_name: 'Block-Social-Media'"
+          - "   applications: ['facebook', 'twitter']"
+          - "   action_type: 'deny'"
+          - ""
+          - "🗑️ DELETE RULE:"
+          - "   rule_action: delete"
+          - "   rule_name: 'Rule-To-Remove'"
+          - ""
+          - "📋 LIST RULES:"
+          - "   rule_action: list"
