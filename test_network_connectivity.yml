@@ -1,0 +1,26 @@
+---
+- name: Network Connectivity Diagnostics
+  hosts: all
+  gather_facts: no
+  
+  tasks:
+    - name: Test basic ping connectivity
+      shell: ping -c 1 192.168.0.100
+      register: ping_result
+      ignore_errors: yes
+      
+    - name: Show ping results
+      debug:
+        msg: "Ping result: {{ ping_result.stdout }}"
+        
+    - name: Test different IP addresses in range
+      shell: ping -c 1 192.168.0.{{ item }}
+      register: ip_scan
+      ignore_errors: yes
+      loop: [100, 101, 102, 103, 104, 105]
+      
+    - name: Show any responding IPs
+      debug:
+        msg: "IP 192.168.0.{{ item.item }} responded!"
+      when: item.rc == 0
+      loop: "{{ ip_scan.results }}"
