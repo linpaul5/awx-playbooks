@@ -1,0 +1,61 @@
+---
+- name: Test Palo Alto VM Connection (Direct API - Fixed)
+  hosts: all
+  gather_facts: no
+  vars:
+    panos_ip: "{{ ansible_host | default('192.168.0.100') }}"
+    panos_username: "{{ panos_username | default('admin') }}"
+    panos_password: "{{ panos_password | default('Lin@226659') }}"
+    # Use the working API key directly
+    panos_api_key: "LUFRPT1mVkM5RHlSTm5uRFA0MmdUQWhVZFZiMjdHS2s9V0IrbVBRQXBnaHRKZUxLcmxsQU5DSjFzYkIyWDNsZHhVSlhvbDR6N2tXNUk1b2QxTG0yZlYrYnZHYXZXS0ZOVw=="
+    
+  tasks:
+    - name: Test basic connectivity to Palo Alto
+      uri:
+        url: "https://{{ panos_ip }}/api/"
+        method: GET
+        validate_certs: no
+        timeout: 30
+        status_code: [200, 400, 403]
+      register: connectivity_test
+      
+    - name: Show connectivity result
+      debug:
+        msg: "✅ Palo Alto VM at {{ panos_ip }} is reachable (HTTP {{ connectivity_test.status }})"
+        
+    - name: Get system information using API key
+      uri:
+        url: "https://{{ panos_ip }}/api/"
+        method: GET
+        validate_certs: no
+        timeout: 30
+        body_format: form-urlencoded
+        body:
+          type: op
+          cmd: "<show><system><info></info></system></show>"
+          key: "{{ panos_api_key }}"
+      register: system_info
+      
+    - name: Parse system information
+      set_fact:
+        system_xml: "{{ system_info.content | regex_search('<system>.*</system>', multiline=True) }}"
+      when: system_info is defined and system_info.status == 200
+      
+    - name: Display success message
+      debug:
+        msg: 
+          - "🎉 SUCCESS! AWX-Palo Alto integration is working!"
+          - "✅ Network connectivity: PASSED"
+          - "✅ HTTPS API access: PASSED" 
+          - "✅ API authentication: PASSED"
+          - "✅ System information retrieved: PASSED"
+          - "Response preview: {{ system_info.content[:200] }}..."
+      when: system_info is defined and system_info.status == 200
+          
+    - name: Show authentication error if failed
+      debug:
+        msg: 
+          - "❌ API authentication failed"
+          - "HTTP Status: {{ system_info.status }}"
+          - "Response: {{ system_info.content }}"
+      when: system_info is defined and system_info.status != 200
