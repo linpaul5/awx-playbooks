@@ -1,0 +1,87 @@
+---
+- name: Simple Palo Alto Rule Check and Commit
+  hosts: all
+  gather_facts: no
+  vars:
+    panos_ip: "{{ ansible_host | default('192.168.0.100') }}"
+    panos_api_key: "LUFRPT1uaWJTajA1U2wxZ3FSdS9jWUdNQ0h2ZHYwdlU9V0IrbVBRQXBnaHRKZUxLcmxsQU5DTGpSclljVUFuWWNvN3ErbGxrYzM2aktJOS9xaTRjYmNSZm92SHJKZDFVZQ=="
+    
+  tasks:
+    - name: 🔍 Test basic connectivity
+      uri:
+        url: "https://{{ panos_ip }}/api/"
+        method: GET
+        validate_certs: false
+        timeout: 10
+        status_code: [200, 400, 403]
+      register: connectivity_test
+      
+    - name: ✅ Connectivity confirmed
+      debug:
+        msg: "Palo Alto VM at {{ panos_ip }} is reachable (HTTP {{ connectivity_test.status }})"
+
+    - name: 💾 Force commit any pending changes
+      uri:
+        url: "https://{{ panos_ip }}/api/"
+        method: POST
+        validate_certs: false
+        timeout: 60
+        body_format: form-urlencoded
+        body:
+          type: commit
+          cmd: "<commit></commit>"
+          key: "{{ panos_api_key }}"
+      register: commit_result
+      
+    - name: 🔄 Commit status
+      debug:
+        msg: 
+          - "Commit Status: {{ commit_result.status | default('FAILED') }}"
+          - "Result: {{ 'SUCCESS - Changes committed!' if commit_result.status == 200 else 'CHECK STATUS' }}"
+
+    - name: ⏱️ Wait for commit to complete
+      pause:
+        seconds: 15
+        prompt: "Waiting for Palo Alto to process commit..."
+      when: commit_result.status == 200
+
+    - name: 🔍 Check if rules exist now
+      uri:
+        url: "https://{{ panos_ip }}/api/"
+        method: GET
+        validate_certs: false
+        timeout: 30
+        body_format: form-urlencoded
+        body:
+          type: config
+          action: show
+          xpath: "/config/devices/entry[@name='localhost.localdomain']/vsys/entry[@name='vsys1']/rulebase/security/rules"
+          key: "{{ panos_api_key }}"
+      register: check_rules
+      ignore_errors: yes
+      
+    - name: 📋 Rules check result
+      debug:
+        msg: 
+          - "Rules Check Status: {{ check_rules.status | default('FAILED') }}"
+          - "Response received: {{ 'YES' if check_rules.status == 200 else 'NO' }}"
+
+    - name: 🎯 FINAL SUMMARY
+      debug:
+        msg: 
+          - "🔧 SIMPLE DIAGNOSTIC COMPLETE!"
+          - ""
+          - "✅ Connectivity: {{ 'OK' if connectivity_test.status == 200 else 'FAILED' }}"
+          - "✅ Commit Forced: {{ 'SUCCESS' if commit_result.status == 200 else 'FAILED' }}"
+          - "✅ Rules Check: {{ 'OK' if check_rules.status == 200 else 'FAILED' }}"
+          - ""
+          - "🎮 NEXT STEPS:"
+          - "1. Refresh your Palo Alto GUI (F5)"
+          - "2. Go to POLICIES > Security > Security Rules"
+          - "3. Look for custom rules beyond the default ones"
+          - "4. If still no rules, try creating a simple test rule"
+          - ""
+          - "💡 ALTERNATIVE LOCATIONS TO CHECK:"
+          - "   - Pre Rules section"
+          - "   - Post Rules section" 
+          - "   - Device > Setup > Management > Configuration"

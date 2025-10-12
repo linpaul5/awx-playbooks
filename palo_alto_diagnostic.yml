@@ -24,8 +24,8 @@
     - name: 📋 Display candidate configuration rules
       debug:
         msg: 
-          - "Candidate Config Status: {{ candidate_rules.status }}"
-          - "Content Length: {{ candidate_rules.content | length }}"
+          - "Candidate Config Status: {{ candidate_rules.status | default('N/A') }}"
+          - "Content Length: {{ (candidate_rules.content | default('') | string | length) if candidate_rules.content is defined else 'N/A' }}"
           - "Looking for 'Production-Web-Allow' rule..."
       
     - name: 🔍 Check running configuration 
@@ -45,8 +45,8 @@
     - name: 📊 Display running configuration rules
       debug:
         msg: 
-          - "Running Config Status: {{ running_rules.status }}"
-          - "Content Length: {{ running_rules.content | length }}"
+          - "Running Config Status: {{ running_rules.status | default('N/A') }}"
+          - "Content Length: {{ (running_rules.content | default('') | string | length) if running_rules.content is defined else 'N/A' }}"
           - "This is what's actually active in Palo Alto"
 
     - name: 🔄 Check commit status
