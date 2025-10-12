@@ -4,7 +4,7 @@
   gather_facts: no
   vars:
     panos_ip: "{{ ansible_host | default('192.168.0.100') }}"
-    panos_api_key: "LUFRPT1mVkM5RHlSTm5uRFA0MmdUQWhVZFZiMjdHS2s9V0IrbVBRQXBnaHRKZUxLcmxsQU5ESjFzYkIyWDNsZHhVSlhvbDR6N2tXNUk1b2QxTG0yZlYrYnZHYXZXS0ZOVw=="
+    panos_api_key: "LUFRPT1uaWJTajA1U2wxZ3FSdS9jWUdNQ0h2ZHYwdlU9V0IrbVBRQXBnaHRKZUxLcmxsQU5DTGpSclljVUFuWWNvN3ErbGxrYzM2aktJOS9xaTRjYmNSZm92SHJKZDFVZQ=="
     
   tasks:
     - name: 🔍 Test connectivity to Palo Alto firewall

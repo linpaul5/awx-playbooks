@@ -1,0 +1,71 @@
+---
+- name: Generate Fresh Palo Alto API Key
+  hosts: all
+  gather_facts: no
+  vars:
+    panos_ip: "{{ ansible_host | default('192.168.0.100') }}"
+    admin_username: "admin"
+    admin_password: "Lin@226659"
+    
+  tasks:
+    - name: 🔍 Test basic connectivity
+      uri:
+        url: "https://{{ panos_ip }}/api/"
+        method: GET
+        validate_certs: false
+        timeout: 10
+        status_code: [200, 400, 403]
+      register: connectivity_test
+      
+    - name: ✅ Connectivity confirmed
+      debug:
+        msg: "Palo Alto VM at {{ panos_ip }} is reachable (HTTP {{ connectivity_test.status }})"
+
+    - name: 🔑 Generate new API key
+      uri:
+        url: "https://{{ panos_ip }}/api/"
+        method: GET
+        validate_certs: false
+        timeout: 30
+        body_format: form-urlencoded
+        body:
+          type: keygen
+          user: "{{ admin_username }}"
+          password: "{{ admin_password }}"
+      register: api_key_generation
+      
+    - name: 📋 Display new API key
+      debug:
+        msg: 
+          - "🎉 API Key Generation Status: {{ api_key_generation.status }}"
+          - "Response Content: {{ api_key_generation.content if api_key_generation.status == 200 else 'FAILED - Check credentials' }}"
+      when: api_key_generation is defined
+
+    - name: 🔍 Extract API key from XML response
+      set_fact:
+        new_api_key: "{{ api_key_generation.content | regex_search('<key>([^<]+)</key>', '\\1') | first }}"
+      when: api_key_generation.status == 200 and '<key>' in api_key_generation.content
+
+    - name: 🎯 NEW API KEY RESULT
+      debug:
+        msg: 
+          - "🚀 API KEY GENERATION COMPLETE!"
+          - ""
+          - "✅ Status: {{ 'SUCCESS' if api_key_generation.status == 200 else 'FAILED' }}"
+          - "🔑 New API Key: {{ new_api_key | default('NOT_EXTRACTED') }}"
+          - ""
+          - "📋 NEXT STEPS:"
+          - "1. Copy the API key above"
+          - "2. Update your playbook with this new key"
+          - "3. Test rule creation with fresh credentials"
+          - ""
+          - "💡 TIP: The key should be about 132 characters long"
+      when: api_key_generation is defined
+
+    - name: ❌ Generation failed
+      debug:
+        msg:
+          - "❌ API Key generation failed"
+          - "Status: {{ api_key_generation.status | default('NO_RESPONSE') }}"
+          - "Check admin username/password: {{ admin_username }}/{{ admin_password }}"
+      when: api_key_generation.status != 200

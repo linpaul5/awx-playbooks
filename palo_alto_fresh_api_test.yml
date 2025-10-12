@@ -4,8 +4,8 @@
   gather_facts: no
   vars:
     panos_ip: "{{ ansible_host | default('192.168.0.100') }}"
-    # REPLACE THIS WITH YOUR NEW API KEY:
-    panos_api_key: "PUT_YOUR_NEW_API_KEY_HERE"
+    # Fresh API key generated via browser method:
+    panos_api_key: "LUFRPT1uaWJTajA1U2wxZ3FSdS9jWUdNQ0h2ZHYwdlU9V0IrbVBRQXBnaHRKZUxLcmxsQU5DTGpSclljVUFuWWNvN3ErbGxrYzM2aktJOS9xaTRjYmNSZm92SHJKZDFVZQ=="
     
   tasks:
     - name: 🔍 Test connectivity
