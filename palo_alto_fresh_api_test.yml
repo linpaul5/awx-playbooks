@@ -1,0 +1,99 @@
+---
+- name: Palo Alto Rule Creation - Fresh API Key Test
+  hosts: all
+  gather_facts: no
+  vars:
+    panos_ip: "{{ ansible_host | default('192.168.0.100') }}"
+    # REPLACE THIS WITH YOUR NEW API KEY:
+    panos_api_key: "PUT_YOUR_NEW_API_KEY_HERE"
+    
+  tasks:
+    - name: 🔍 Test connectivity
+      uri:
+        url: "https://{{ panos_ip }}/api/"
+        method: GET
+        validate_certs: false
+        timeout: 30
+        status_code: [200, 400, 403]
+      register: connectivity_test
+      
+    - name: ✅ Connectivity confirmed
+      debug:
+        msg: "Palo Alto VM at {{ panos_ip }} is reachable (HTTP {{ connectivity_test.status }})"
+
+    - name: 🔑 Test new API key with system info
+      uri:
+        url: "https://{{ panos_ip }}/api/"
+        method: GET
+        validate_certs: false
+        timeout: 30
+        body_format: form-urlencoded
+        body:
+          type: op
+          cmd: "<show><system><info></info></system></show>"
+          key: "{{ panos_api_key }}"
+      register: api_test
+      
+    - name: 📊 API Key Test Result
+      debug:
+        msg: 
+          - "API Key Test Status: {{ api_test.status }}"
+          - "Result: {{ 'SUCCESS - API Key Works!' if api_test.status == 200 else 'FAILED - Check API Key' }}"
+
+    - name: 🆕 Create security rule (SIMPLE VERSION)
+      uri:
+        url: "https://{{ panos_ip }}/api/"
+        method: POST
+        validate_certs: false
+        timeout: 30
+        body_format: form-urlencoded
+        body:
+          type: config
+          action: set
+          xpath: "/config/devices/entry[@name='localhost.localdomain']/vsys/entry[@name='vsys1']/rulebase/security/rules/entry[@name='{{ rule_name | default('AWX-New-API-Test') }}']"
+          element: |
+            <from><member>trust</member></from>
+            <to><member>untrust</member></to>
+            <source><member>any</member></source>
+            <destination><member>any</member></destination>
+            <application><member>web-browsing</member></application>
+            <service><member>application-default</member></service>
+            <action>{{ action_type | default('allow') }}</action>
+            <description>{{ rule_description | default('Test rule with fresh API key') }}</description>
+            <disabled>no</disabled>
+          key: "{{ panos_api_key }}"
+      register: rule_creation
+      when: (rule_action | default('create')) == 'create'
+      
+    - name: ✅ Rule creation result
+      debug:
+        msg: 
+          - "🎉 Rule Creation Status: {{ rule_creation.status | default('Not attempted') }}"
+          - "Result: {{ 'SUCCESS!' if rule_creation.status == 200 else 'Check status above' }}"
+          - "Rule Name: {{ rule_name | default('AWX-New-API-Test') }}"
+      when: rule_creation is defined
+      
+    - name: 💾 Commit changes
+      uri:
+        url: "https://{{ panos_ip }}/api/"
+        method: POST
+        validate_certs: false
+        timeout: 60
+        body_format: form-urlencoded
+        body:
+          type: commit
+          cmd: "<commit></commit>"
+          key: "{{ panos_api_key }}"
+      register: commit_result
+      when: (rule_action | default('create')) == 'create' and rule_creation.status == 200
+      
+    - name: 🎯 FINAL RESULT
+      debug:
+        msg: 
+          - "🚀 API KEY TEST COMPLETE!"
+          - "✅ Connectivity: {{ 'OK' if connectivity_test.status == 200 else 'FAILED' }}"
+          - "✅ API Key Auth: {{ 'SUCCESS' if api_test.status == 200 else 'FAILED' }}"
+          - "✅ Rule Creation: {{ 'SUCCESS' if rule_creation.status == 200 else 'FAILED' }}"
+          - "✅ Commit: {{ 'SUCCESS' if commit_result.status == 200 else 'PENDING' }}"
+          - ""
+          - "{{ 'COMPLETE SUCCESS! Check Palo Alto GUI for new rule!' if rule_creation.status == 200 else 'Need to fix API key or permissions' }}"
