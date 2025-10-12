@@ -1,0 +1,129 @@
+---
+- name: Rule Visibility Test - Create and Verify Rule
+  hosts: localhost
+  gather_facts: false
+  vars:
+    palo_alto_ip: "192.168.0.100"
+    api_key: "LUFRPT1uaWJTajA1U2wxZ3FSdS9jWUdNQ0h2ZHYwdlU9V0IrbVBRQXBnaHRKZUxLcmxsQU5DTGpSclljVUFuWWNvN3ErbGxrYzM2aktJOS9xaTRjYmNSZm92SHJKZDFVZQ=="
+    test_rule_name: "AWX-VISIBILITY-TEST"
+
+  tasks:
+    - name: "Step 1 - List all existing security rules BEFORE creation"
+      uri:
+        url: "https://{{ palo_alto_ip }}/restapi/v10.0/Policies/SecurityRules"
+        method: GET
+        headers:
+          X-PAN-KEY: "{{ api_key }}"
+        validate_certs: false
+        return_content: true
+      register: rules_before
+      
+    - name: "Display existing rules count"
+      debug:
+        msg: "Found {{ (rules_before.content | from_json).result.entry | default([]) | length }} existing security rules"
+
+    - name: "Step 2 - Create a very obvious test security rule"
+      uri:
+        url: "https://{{ palo_alto_ip }}/restapi/v10.0/Policies/SecurityRules"
+        method: POST
+        headers:
+          X-PAN-KEY: "{{ api_key }}"
+          Content-Type: "application/json"
+        body_format: json
+        body:
+          entry:
+            - "@name": "{{ test_rule_name }}"
+              from:
+                member: ["any"]
+              to:
+                member: ["any"]
+              source:
+                member: ["any"]
+              destination:
+                member: ["any"]
+              source-user:
+                member: ["any"]
+              category:
+                member: ["any"]
+              application:
+                member: ["any"]
+              service:
+                member: ["any"]
+              hip-profiles:
+                member: ["any"]
+              action: "allow"
+              description: "TEST RULE CREATED BY AWX - SHOULD BE VISIBLE"
+        validate_certs: false
+        return_content: true
+      register: create_result
+
+    - name: "Display rule creation result"
+      debug:
+        msg: 
+          - "Rule creation status: {{ create_result.status }}"
+          - "Rule creation response: {{ create_result.content }}"
+
+    - name: "Step 3 - Commit the configuration immediately"
+      uri:
+        url: "https://{{ palo_alto_ip }}/restapi/v10.0/Policies/SecurityRules?action=commit"
+        method: POST
+        headers:
+          X-PAN-KEY: "{{ api_key }}"
+        validate_certs: false
+        return_content: true
+      register: commit_result
+
+    - name: "Display commit result"
+      debug:
+        msg:
+          - "Commit status: {{ commit_result.status }}"
+          - "Commit response: {{ commit_result.content }}"
+
+    - name: "Step 4 - Wait for commit to complete"
+      pause:
+        seconds: 5
+
+    - name: "Step 5 - List all security rules AFTER creation and commit"
+      uri:
+        url: "https://{{ palo_alto_ip }}/restapi/v10.0/Policies/SecurityRules"
+        method: GET
+        headers:
+          X-PAN-KEY: "{{ api_key }}"
+        validate_certs: false
+        return_content: true
+      register: rules_after
+
+    - name: "Display rules after creation"
+      debug:
+        msg: "Found {{ (rules_after.content | from_json).result.entry | default([]) | length }} security rules after creation"
+
+    - name: "Step 6 - Check if our test rule exists in the list"
+      set_fact:
+        our_rule_found: "{{ (rules_after.content | from_json).result.entry | default([]) | selectattr('@name', 'equalto', test_rule_name) | list | length > 0 }}"
+
+    - name: "Display test rule status"
+      debug:
+        msg: 
+          - "Test rule '{{ test_rule_name }}' found in API response: {{ our_rule_found }}"
+          - "If false, rule was not created or was deleted"
+          - "If true, rule exists in API but may not be visible in GUI"
+
+    - name: "Step 7 - Show all rule names for verification"
+      debug:
+        msg: "All rule names: {{ (rules_after.content | from_json).result.entry | default([]) | map(attribute='@name') | list }}"
+
+    - name: "Step 8 - Check virtual system configuration"
+      uri:
+        url: "https://{{ palo_alto_ip }}/restapi/v10.0/Network/VirtualSystems"
+        method: GET
+        headers:
+          X-PAN-KEY: "{{ api_key }}"
+        validate_certs: false
+        return_content: true
+      register: vsys_result
+      ignore_errors: true
+
+    - name: "Display virtual system info"
+      debug:
+        msg: "Virtual systems: {{ vsys_result.content | default('Could not retrieve') }}"
+      when: vsys_result is defined
