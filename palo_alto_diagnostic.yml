@@ -1,0 +1,114 @@
+---
+- name: Palo Alto Rule Diagnostic and Commit
+  hosts: all
+  gather_facts: no
+  vars:
+    panos_ip: "{{ ansible_host | default('192.168.0.100') }}"
+    panos_api_key: "LUFRPT1uaWJTajA1U2wxZ3FSdS9jWUdNQ0h2ZHYwdlU9V0IrbVBRQXBnaHRKZUxLcmxsQU5DTGpSclljVUFuWWNvN3ErbGxrYzM2aktJOS9xaTRjYmNSZm92SHJKZDFVZQ=="
+    
+  tasks:
+    - name: 🔍 Check candidate configuration (pending changes)
+      uri:
+        url: "https://{{ panos_ip }}/api/"
+        method: GET
+        validate_certs: false
+        timeout: 30
+        body_format: form-urlencoded
+        body:
+          type: config
+          action: get
+          xpath: "/config/devices/entry[@name='localhost.localdomain']/vsys/entry[@name='vsys1']/rulebase/security/rules"
+          key: "{{ panos_api_key }}"
+      register: candidate_rules
+      
+    - name: 📋 Display candidate configuration rules
+      debug:
+        msg: 
+          - "Candidate Config Status: {{ candidate_rules.status }}"
+          - "Content Length: {{ candidate_rules.content | length }}"
+          - "Looking for 'Production-Web-Allow' rule..."
+      
+    - name: 🔍 Check running configuration 
+      uri:
+        url: "https://{{ panos_ip }}/api/"
+        method: GET
+        validate_certs: false
+        timeout: 30
+        body_format: form-urlencoded
+        body:
+          type: config
+          action: show
+          xpath: "/config/devices/entry[@name='localhost.localdomain']/vsys/entry[@name='vsys1']/rulebase/security/rules"
+          key: "{{ panos_api_key }}"
+      register: running_rules
+      
+    - name: 📊 Display running configuration rules
+      debug:
+        msg: 
+          - "Running Config Status: {{ running_rules.status }}"
+          - "Content Length: {{ running_rules.content | length }}"
+          - "This is what's actually active in Palo Alto"
+
+    - name: 🔄 Check commit status
+      uri:
+        url: "https://{{ panos_ip }}/api/"
+        method: GET
+        validate_certs: false
+        timeout: 30
+        body_format: form-urlencoded
+        body:
+          type: op
+          cmd: "<show><jobs><all></all></jobs></show>"
+          key: "{{ panos_api_key }}"
+      register: jobs_status
+      
+    - name: 📈 Show recent jobs
+      debug:
+        msg: 
+          - "Jobs Status: {{ jobs_status.status }}"
+          - "Recent operations on Palo Alto"
+
+    - name: 💾 Force commit all pending changes
+      uri:
+        url: "https://{{ panos_ip }}/api/"
+        method: POST
+        validate_certs: false
+        timeout: 60
+        body_format: form-urlencoded
+        body:
+          type: commit
+          cmd: "<commit></commit>"
+          key: "{{ panos_api_key }}"
+      register: force_commit
+      
+    - name: ✅ Commit result
+      debug:
+        msg: 
+          - "Force Commit Status: {{ force_commit.status }}"
+          - "Commit Response: {{ 'SUCCESS' if force_commit.status == 200 else 'FAILED' }}"
+
+    - name: 🔄 Wait for commit to complete (30 seconds)
+      pause:
+        seconds: 30
+      when: force_commit.status == 200
+
+    - name: 🎯 DIAGNOSTIC SUMMARY
+      debug:
+        msg: 
+          - "🔍 DIAGNOSTIC COMPLETE!"
+          - ""
+          - "📊 CONFIGURATION STATUS:"
+          - "   Candidate Config: {{ 'ACCESSIBLE' if candidate_rules.status == 200 else 'FAILED' }}"
+          - "   Running Config: {{ 'ACCESSIBLE' if running_rules.status == 200 else 'FAILED' }}"
+          - "   Force Commit: {{ 'SUCCESS' if force_commit.status == 200 else 'FAILED' }}"
+          - ""
+          - "🎮 NEXT STEPS:"
+          - "1. Wait 30 seconds for commit to complete"
+          - "2. Refresh Palo Alto GUI (F5)"
+          - "3. Check POLICIES > Security > Security Rules"
+          - "4. Look for 'Production-Web-Allow' rule"
+          - "" 
+          - "💡 If still no rules visible:"
+          - "   - Rules might be in different rule base"
+          - "   - Check 'Pre Rules' or 'Post Rules' sections"
+          - "   - Verify vsys1 is the correct virtual system"
